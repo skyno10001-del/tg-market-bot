@@ -13,29 +13,77 @@ on:
         default: "draft"
 
   schedule:
-    - cron: "30 23 * * 0-4"
-    - cron: "10 0 * * 1-5"
-    - cron: "30 2 * * 1-5"
-    - cron: "20 6 * * 1-5"
+    # KST(UTC+9) -> UTC 변환
+    - cron: "30 23 * * 0-4"  # 08:30 KST (월~금) -> UTC 일~목
+    - cron: "10 0 * * 1-5"   # 09:10 KST
+    - cron: "30 2 * * 1-5"   # 11:30 KST
+    - cron: "20 6 * * 1-5"   # 15:20 KST
 
 jobs:
-  run-bot:
+  overseas:
+    if: github.event_name == 'schedule' && github.event.schedule == '30 23 * * 0-4'
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-
+        with: { node-version: "20" }
       - run: npm ci
-
-      - name: Run bot
+      - name: Run overseas
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
           TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
-          MODE: ${{ github.event.inputs.mode || 'draft' }}
-          JOB: ${{ github.event.inputs.job || 'overseas' }}
+          MODE: ${{ secrets.MODE || 'draft' }}
+          JOB: overseas
+        run: npm start
+
+  premarket:
+    if: github.event_name == 'schedule' && github.event.schedule == '10 0 * * 1-5'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: Run premarket
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
+          TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
+          MODE: ${{ secrets.MODE || 'draft' }}
+          JOB: premarket
+        run: npm start
+
+  midday:
+    if: github.event_name == 'schedule' && github.event.schedule == '30 2 * * 1-5'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: Run midday
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
+          TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
+          MODE: ${{ secrets.MODE || 'draft' }}
+          JOB: midday
+        run: npm start
+
+  close:
+    if: github.event_name == 'schedule' && github.event.schedule == '20 6 * * 1-5'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "20" }
+      - run: npm ci
+      - name: Run close
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
+          TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
+          MODE: ${{ secrets.MODE || 'draft' }}
+          JOB: close
         run: npm start
