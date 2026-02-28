@@ -1,0 +1,44 @@
+name: Telegram Market Bot (MANUAL)
+
+on:
+  workflow_dispatch:
+    inputs:
+      job:
+        description: "overseas | premarket | midday | close"
+        required: true
+        default: "overseas"
+        type: choice
+        options:
+          - overseas
+          - premarket
+          - midday
+          - close
+      mode:
+        description: "draft(나에게) | publish(채널)"
+        required: true
+        default: "draft"
+        type: choice
+        options:
+          - draft
+          - publish
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - run: npm ci
+
+      - name: Run bot
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
+          TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
+          MODE: ${{ github.event.inputs.mode }}
+          JOB: ${{ github.event.inputs.job }}
+        run: npm start
