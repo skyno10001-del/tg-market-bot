@@ -1,0 +1,12 @@
+{
+  "name": "tg-market-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9"
+  }
+}
