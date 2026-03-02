@@ -1,89 +1,49 @@
 name: Telegram Market Bot (KST)
 
 on:
-  workflow_dispatch:
-    inputs:
-      job:
-        description: "overseas | premarket | midday | close"
-        required: true
-        default: "overseas"
-      mode:
-        description: "draft | publish"
-        required: true
-        default: "draft"
-
   schedule:
-    # KST(UTC+9) -> UTC 변환
-    - cron: "30 23 * * 0-4"  # 08:30 KST (월~금) -> UTC 일~목
-    - cron: "10 0 * * 1-5"   # 09:10 KST
-    - cron: "30 2 * * 1-5"   # 11:30 KST
-    - cron: "20 6 * * 1-5"   # 15:20 KST
+    - cron: "30 23 * * 0-4"  # 08:30 KST (Mon-Fri)
+    - cron: "10 0 * * 1-5"   # 09:10 KST (Mon-Fri)
+  workflow_dispatch:
 
 jobs:
-  overseas:
-    if: github.event_name == 'schedule' && github.event.schedule == '30 23 * * 0-4'
+  run-bot:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-      - run: npm ci
-      - name: Run overseas
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
-          TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
-          MODE: ${{ secrets.MODE || 'draft' }}
-          JOB: overseas
-        run: npm start
 
-  premarket:
-    if: github.event_name == 'schedule' && github.event.schedule == '10 0 * * 1-5'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-      - run: npm ci
-      - name: Run premarket
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
-          TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
-          MODE: ${{ secrets.MODE || 'draft' }}
-          JOB: premarket
-        run: npm start
+        with:
+          node-version: "20"
 
-  midday:
-    if: github.event_name == 'schedule' && github.event.schedule == '30 2 * * 1-5'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
       - run: npm ci
-      - name: Run midday
-        env:
-          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
-          TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
-          MODE: ${{ secrets.MODE || 'draft' }}
-          JOB: midday
-        run: npm start
 
-  close:
-    if: github.event_name == 'schedule' && github.event.schedule == '20 6 * * 1-5'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: "20" }
-      - run: npm ci
-      - name: Run close
+      - name: Pick job by schedule (KST)
+        run: |
+          echo "CRON=${{ github.event.schedule }}" >> $GITHUB_ENV
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "JOB=overseas" >> $GITHUB_ENV
+          else
+            if [ "${{ github.event.schedule }}" = "30 23 * * 0-4" ]; then
+              echo "JOB=overseas" >> $GITHUB_ENV
+            elif [ "${{ github.event.schedule }}" = "10 0 * * 1-5" ]; then
+              echo "JOB=news" >> $GITHUB_ENV
+            else
+              echo "JOB=overseas" >> $GITHUB_ENV
+            fi
+          fi
+
+      - name: Run bot
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
           TG_CHANNEL_CHAT_ID: ${{ secrets.TG_CHANNEL_CHAT_ID }}
-          MODE: ${{ secrets.MODE || 'draft' }}
-          JOB: close
+          MODE: publish
+          JOB: ${{ env.JOB }}
+          CAT_REALTIME: "@flow_realtime"
+          CAT_THEME: "@flow_theme"
+          CAT_WATCH: "@flow_watch"
+          CAT_SUPPLY: "@flow_supply"
+          CAT_CALENDAR: "@flow_calendar"
+          CAT_SHARE: "@flow_share"
         run: npm start
