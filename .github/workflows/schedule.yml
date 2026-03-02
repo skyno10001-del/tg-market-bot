@@ -5,24 +5,30 @@ on:
     - cron: "30 23 * * 0-4"  # 08:30 KST (Mon-Fri)
     - cron: "10 0 * * 1-5"   # 09:10 KST (Mon-Fri)
   workflow_dispatch:
+    inputs:
+      job:
+        description: "overseas | news"
+        required: true
+        default: "overseas"
+        type: choice
+        options:
+          - overseas
+          - news
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - run: npm ci
 
-      - name: Pick job by schedule (KST)
+      - name: Set JOB
         run: |
-          echo "CRON=${{ github.event.schedule }}" >> $GITHUB_ENV
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "JOB=overseas" >> $GITHUB_ENV
+            echo "JOB=${{ github.event.inputs.job }}" >> $GITHUB_ENV
           else
             if [ "${{ github.event.schedule }}" = "30 23 * * 0-4" ]; then
               echo "JOB=overseas" >> $GITHUB_ENV
@@ -33,7 +39,7 @@ jobs:
             fi
           fi
 
-      - name: Run bot
+      - name: Run bot (publish to main channel)
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_ADMIN_CHAT_ID: ${{ secrets.TG_ADMIN_CHAT_ID }}
