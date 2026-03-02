@@ -1,6 +1,7 @@
 import { sendTelegramMessage } from "./telegram.js";
 import { buildMessage } from "./format.js";
 import { buildCategoryButtons } from "./categories.js";
+import { fetchLastDaily } from "./stooq.js";
 
 const {
   TG_BOT_TOKEN,
