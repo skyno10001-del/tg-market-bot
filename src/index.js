@@ -2,6 +2,7 @@ import { sendTelegramMessage } from "./telegram.js";
 import { buildMessage } from "./format.js";
 import { buildCategoryButtons } from "./categories.js";
 import { fetchLastDaily } from "./stooq.js";
+import { fetchNewsHeadlines } from "./news.js";
 
 const {
   TG_BOT_TOKEN,
@@ -22,9 +23,31 @@ async function main() {
   const chatId = getTargetChatId();
   console.log("Sending to:", chatId);
 
-  const text = buildMessage({ job: JOB });
+  let market = null;
 
-  // ✅ 하단 카테고리 버튼
+  // ✅ 1️⃣ 해외시장 자동 데이터
+  if (JOB === "overseas") {
+  const [spx, ndx, dji, y10, usd_i, usdkrw] = await Promise.all([
+  fetchLastDaily("^SPX"),
+  fetchLastDaily("^NDX"),
+  fetchLastDaily("^DJI"),
+  fetchLastDaily("10YUSY.B"),
+  fetchLastDaily("USD_I"),
+  fetchLastDaily("USDKRW"),
+]);
+
+market = { spx, ndx, dji, y10, usd_i, usdkrw };
+  }
+
+  // ✅ 2️⃣ 뉴스 자동 RSS
+  if (JOB === "news") {
+    const headlines = await fetchNewsHeadlines();
+    market = { headlines };
+  }
+
+  // ✅ 여기서 market 포함해서 메시지 생성
+  const text = buildMessage({ job: JOB, market });
+
   const replyMarkup = buildCategoryButtons();
 
   await sendTelegramMessage({
@@ -36,6 +59,7 @@ async function main() {
 
   console.log("Message sent ✅");
 }
+
 
 main().catch((err) => {
   console.error("ERROR:", err?.response?.data || err.message || err);
